@@ -1,7 +1,7 @@
 import math, time, ustruct
 from machine import UART
 
-uart2 = UART(2, baudrate=115200, rx=2, tx=18)
+uart2 = None
 bno055buffer = bytearray(24)
 tbno055timeout = 0
 bs = bytearray("Zt00000000x0000y0000z0000a0000b0000c0000w0000x0000y0000z0000s00\n")
@@ -25,9 +25,12 @@ prevcalibvals = None
 def writecalibstat():
     global prevcalibvals
     cl = None
-    for lcl in open("calibfile.txt"):
-        if len(lcl) == 54:
-            cl = lcl
+    try:
+        for lcl in open("calibfile.txt"):
+            if len(lcl) == 54:
+                cl = lcl
+    except OSError:
+        return False   # file missing
     print(lcl)
     if cl is None:
         raise OSError("bad calib line")
@@ -41,7 +44,10 @@ def writecalibstat():
     print(v)
     return v == b'\xee\x01'
 
-def InitBNO055():
+def InitBNO055(rx=2, tx=18):
+    global uart2
+    uart2 = UART(2, baudrate=115200, rx=rx, tx=tx)
+
     if not bno055write1(0x3D, 0x00):  raise OSError("BAD055_0")   # config_mode
     writecalibstat()
     if not bno055write1(0x3E, 0x00):  raise OSError("BAD055_1")   # PWR_MODE normal
