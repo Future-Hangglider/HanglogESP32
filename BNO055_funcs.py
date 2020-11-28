@@ -44,9 +44,9 @@ def writecalibstat():
     print(v)
     return v == b'\xee\x01'
 
-def InitBNO055(rx=2, tx=18):
+def InitBNO055(luart):
     global uart2
-    uart2 = UART(2, baudrate=115200, rx=rx, tx=tx)
+    uart2 = luart
 
     if not bno055write1(0x3D, 0x00):  raise OSError("BAD055_0")   # config_mode
     writecalibstat()

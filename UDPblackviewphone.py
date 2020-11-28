@@ -5,11 +5,12 @@ sockudp.settimeout(0.02)
 si = network.WLAN(network.STA_IF) 
 
 # Connect to Blackview/S5 (Android) phone
-def connectActivePhone(pled):
-    hotspots = { }
-    for l in open("hotspots.txt", "rb"):
-        s = l.split()
-        hotspots[s[0]] = (s[1], s[2].decode(), int(s[3]))
+def connectActivePhone(pled, hotspots=None):
+    if hotspots is None:
+        hotspots = { }
+        for l in open("hotspots.txt", "rb"):
+            s = l.split()
+            hotspots[s[0]] = (s[1], s[2].decode(), int(s[3]))
     print(hotspots)
     
     si.active(True)
