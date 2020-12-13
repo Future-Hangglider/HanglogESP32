@@ -47,9 +47,10 @@ class BNO055:
                     cl = lcl
         except OSError:
             return False   # file missing
-        print(lcl)
+        print(cl)
         if cl is None:
-            raise OSError("bad calib line")
+            print("bad calib line")
+            return False
         calibs = bytearray((0xAA, 0x00, 0x55, 22))
         for i in range(22):
             calibs.append(int(cl[9+i*2:11+i*2], 16))
@@ -69,7 +70,7 @@ class BNO055:
             if calibs != self.prevcalibvals:
                 print("recordingcalibs", calibs)
                 fcalib = open("calibfile%s.txt" % self.letter, "a")
-                fcalib.write(mbs[2:10])
+                fcalib.write(self.mbs[2:10])
                 fcalib.write(" ")
                 for c in calibs:
                     fcalib.write("%02X" % c)

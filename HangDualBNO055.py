@@ -11,9 +11,10 @@ def MakeBNO055(dev):
     u = UART(int(d[0]), baudrate=115200, rx=int(d[1][2:]), tx=int(d[2][2:]))
     for i in range(5):
         try:
+            print(u, d[3])
             return BNO055(u, d[3])
-        except OSError:
-            pass
+        except OSError as e:
+            print(e)
         print("fail", i, d)
         time.sleep(0.5)
     
