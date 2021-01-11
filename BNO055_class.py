@@ -6,9 +6,10 @@ hposlst = b').38\x0b\x10\x15\x1a\x1f$' # =[41, 46, 51, 56, 11, 16, 21, 26, 31, 3
 class BNO055:
     def __init__(self, luart, letter='Z'):
         self.uart2 = luart
-        self.bno055buffer = bytearray(24)
+        self.bno055buffer = bytearray(36)
+        self.mbno055buffer = memoryview(self.bno055buffer)[12:]
         self.tbno055timeout = 0
-        self.bs = bytearray("Zt00000000x0000y0000z0000a0000b0000c0000w0000x0000y0000z0000s00\n")
+        self.bs = bytearray("Zt00000000x0000y0000z0000a0000b0000c0000w0000x0000y0000z0000s00m0000n0000o0000\n")
         self.letter = letter
         self.bs[0] = ord(self.letter)
         self.mbs = memoryview(self.bs)
@@ -79,24 +80,31 @@ class BNO055:
                 fcalib.close()
                 self.prevcalibvals = calibs
             else:
-                print("calibvals unchanged")
+                pass#("calibvals unchanged")
         self.prevcalibstat = calibstat
 
     def readhexlifyBNO055(self, timeoutms=20):
         nr = self.uart2.readinto(self.bno055buffer)
-        brec = ((self.bno055buffer[0] == 0xBB) and (self.bno055buffer[1] == 22) and (nr == 24))
+        brec = ((self.bno055buffer[0] == 0xBB) and (self.bno055buffer[1] == 34) and (nr == 36))
+        print(nr,self.bno055buffer)
         mstamp = time.ticks_ms()
         if brec:
             self.mbs[2:10] = b"%08X" % mstamp
-            self.mbs[61:63] = b"%02X" % self.bno055buffer[23]  # CALIB_STAT in 0x35 
+            self.mbs[61:63] = b"%02X" % self.mbno055buffer[23]  # CALIB_STAT in 0x35 
             for i, p in enumerate(hposlst):
-                v = self.bno055buffer[i*2 + 2] + (self.bno055buffer[i*2 + 3]<<8)
+                v = self.mbno055buffer[i*2 + 2] + (self.mbno055buffer[i*2 + 3]<<8)
                 self.mbs[p:p+4] = b"%04X" % v
+            gm = self.bno055buffer[2] + (self.bno055buffer[3]<<8)
+            gn = self.bno055buffer[4] + (self.bno055buffer[5]<<8)
+            go = self.bno055buffer[6] + (self.bno055buffer[7]<<8)
+            self.mbs[64:68] = b"%04X" % gm
+            self.mbs[69:73] = b"%04X" % gn
+            self.mbs[74:78] = b"%04X" % go
             self.tbno055timeout = 0  # immediately fire off the next request
-            self.recordcalibifnecessary(self.bno055buffer[23])
+            self.recordcalibifnecessary(self.mbno055buffer[23])
 
         if mstamp > self.tbno055timeout:
-            self.uart2.write(b"\xAA\x01\x20\x16")
+            self.uart2.write(b"\xAA\x01\x14\x22")
             self.tbno055timeout = mstamp + timeoutms
         return self.bs if brec else None
 
